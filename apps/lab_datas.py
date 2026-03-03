@@ -17,10 +17,13 @@ O Usuário irá cadastrar sua despesa... ele pode colocar data da compra e data 
         if data_dia > pega_fech_venc(id_user)[0]:
             data_venc = 12/03/26 
 
-- Método que pega todas as dividas do mês seguinte:
+- Método que retorna despesas de cada cartão utilizado pelo usuario
 
-- Método que pega as dividas do mês vigente:
+- Método que pega a soma todas as dividas do mês seguinte
 
+- Método que pega soma de todas as dividas do mês vigente
+
+- Método que retorna as despesas não cadastradas no cartão.
 
 
 """
