@@ -82,6 +82,118 @@ def desconectar(conn):
 
 #--------------- Tabelas de testes dos apps -----------------------
 
-def verifica_user(user, senha, conn=None):
-    pass
+def verifica_login(usuario, senha, conn=None):
+    """
+    Verificar usuario e senha no BD e confirmar login.
+    
+    Args:
+        usuario (str): Nome do usuário a ser pesquisado
+        senha (str): Senha do usuário a ser pesquisado
+        conn (MySQLdb.connections.Connection, optional): Conexão ativa com o banco. 
+            Se não fornecida, a função abre e gerencia sua própria conexão.
 
+    Returns:
+        True: Se o usuário e senha estiver correto e no BD, confirma o acesso 
+        None: Se o usuário não for localizado ou tiver erro de digitação.
+    """
+
+    gerenciar_conn = False
+
+    if conn is None:
+        conn= conectar_bd_original()
+        gerenciar_conn = True
+
+    cursor = conn.cursor() # Mensageiro, passa o comando e retorna resltados
+
+    try:
+        cursor.execute('SELECT id FROM usuario WHERE nome_usuario=%s AND senha=%s', (usuario, senha))
+        login_sucesso = cursor.fetchone()
+
+        if login_sucesso:
+            print('Usuário e senha encontrado! ')
+            return login_sucesso
+        else:
+            print("Usuário ou Senha não encontrado!")
+            return None
+        
+    except MySQLdb.Error as e: # Captura erro específico do MySQL
+        print(f'Erro no MySQL ao verificar usuário e senha: {e}')
+        raise # Re-levanta a exceção para que o chamador saiba que algo deu errado
+
+    except Exception as e:
+        print(f'Erro inesperado ao verificar usuário e senha: {e}')
+
+    finally:
+        if gerenciar_conn:
+            desconectar(conn)
+
+
+def pega_cartoes(id_user,conn=None):
+    """
+    Busca os cartões cadastrados pelo usuário
+
+    Args:
+        id_user: id do usuário que fez login
+    Returns:
+        List: Retorna uma lista com (nome, data_fechamento, data_vencimento)
+    """
+    gerenciar_conn = False
+
+    if conn is None:
+        conn= conectar_bd_original()
+        gerenciar_conn= True
+
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT nome, limite, dia_fechamento, dia_vencimento FROM despesas WHERE fk_usuario = %s", (id_user,))
+        cartoes = cursor.fetchall() 
+
+        colunas = ['nome', 'limite', 'dia_fechamento', 'dia_vencimento']
+        return [dict(zip(colunas, c)) for c in cartoes]
+    
+    except MySQLdb.Error as e:
+        print(f"Erro MySQL ao listar cartoes: {e}")
+        return [] # Retorna lista vazia em caso de erro no DB
+    except Exception as e: # Capture exceções para depuração
+        print(f"Erro ao listar cartoes: {e}")
+        return [] # Retorne uma lista vazia em caso de erro geral
+    
+    finally:
+        if gerenciar_conn:
+            desconectar(conn)
+
+def pega_despesas(id_user, conn=None):
+    """
+    Busca as despesas do usuário
+    Args:
+        id_user: identificação do usuário
+    Returns:
+        List(Dict): Retorna uma lista de dicionarios com as despesas do usuáro passado
+
+    """
+    gerenciar_conn = False
+
+    if conn is None:
+        conn= conectar_bd_original()
+        gerenciar_conn= True
+
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT id, local, valor_total, parcelas, data_compra, data_vencimento, fk_cc FROM despesas WHERE fk_usuario = %s", (id_user,))
+        despesas = cursor.fetchall() # fetchall() para obter todas as linhas, retorna tupla de tuplas 
+
+        colunas = ['id', 'local', 'valor_total', 'parcelas', 'data_compra', 'data_vencimento', 'cartao_id']
+        return [dict(zip(colunas, d)) for d in despesas]
+    
+    except MySQLdb.Error as e:
+        print(f"Erro MySQL ao listar despesas: {e}")
+        return [] # Retorna lista vazia em caso de erro no DB
+    except Exception as e: # Capture exceções para depuração
+        print(f"Erro ao listar despesas: {e}")
+        return [] # Retorne uma lista vazia em caso de erro geral
+    
+    finally:
+        if gerenciar_conn:
+            desconectar(conn)

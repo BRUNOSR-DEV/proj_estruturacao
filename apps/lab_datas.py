@@ -2,8 +2,23 @@
 Laboratório de Datas (datetime e calendar)
 
 """
+import sys
+import os
+
+# Adiciona a pasta raiz (PROJ_ESTRUTURACAO) ao path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from models.banco_geral import(
+    pega_cartoes, pega_despesas
+)
+from utils.helper import
+from datetime import datetime, timedelta
+from dateutil import parser
+from dateutil.relativedelta import relativedelta
+
 usuario = "bruno"
 senha = "2285"
+id_user = 1
 
 """
 O Usuário irá cadastrar sua despesa... ele pode colocar data da compra e data vencimento. Se não colocar a data de vencimento é pq está no cartão de crédito e, ele tem vencimento próprio.
@@ -28,11 +43,54 @@ O Usuário irá cadastrar sua despesa... ele pode colocar data da compra e data 
 
 """
 
-from models.banco_geral import(
-    verifica_user, 
-)
-from datetime import datetime, timedelta
-from dateutil import parser
+
+
+
+def definir_vencimento_real(data_compra_str, dia_fechamento, dia_vencimento):
+    # 1. Converte a entrada do usuário
+    data_compra = datetime.strptime(data_compra_str, "%d/%m/%Y")
+    
+    # 2. Lógica: A fatura já fechou?
+    if data_compra.day > dia_fechamento:
+        # Se sim, o vencimento é no PRÓXIMO mês
+        vencimento = data_compra + relativedelta(months=1)
+    else:
+        # Se não, o vencimento é no MÊS ATUAL
+        vencimento = data_compra
+    
+    # 3. Ajusta o dia para o dia oficial de vencimento do cartão
+    vencimento_final = vencimento.replace(day=dia_vencimento)
+    
+    return vencimento_final
+
+
+def depesas_do_usuario(id_user):
+    """
+    Método que mostra as despesas do usuário
+    """
+    for i in pega_despesas(id_user):
+        print(i.get('local'))
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #data_usuario = input("Digite uma data: ")
