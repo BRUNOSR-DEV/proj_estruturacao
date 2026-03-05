@@ -128,7 +128,61 @@ def verifica_login(usuario, senha, conn=None):
             desconectar(conn)
 
 
-def pega_cartoes(id_user,conn=None):
+def pega_despesas_cartao(id_user, id_card, conn=None):
+    """
+    Busca todas as despesas de um cartão específico, trazendo junto 
+    os dados do cartão em um único dicionário usando INNER JOIN.
+    """
+    gerenciar_conn = False
+    if conn is None:
+        conn = conectar_bd_original()
+        gerenciar_conn = True
+
+    cursor = conn.cursor()
+
+    try:
+        # A mágica acontece aqui: Juntamos as duas tabelas onde as chaves se encontram
+        query = """
+            SELECT 
+                d.id, 
+                d.local, 
+                d.valor_total, 
+                d.parcelas, 
+                d.data_compra,
+                c.nome,
+                c.limite, 
+                c.dia_fechamento, 
+                c.dia_vencimento
+            FROM despesas d
+            INNER JOIN cartoes_credito c ON d.fk_cc = c.id
+            WHERE d.fk_usuario = %s AND d.fk_cc = %s
+        """
+        
+        cursor.execute(query, (id_user, id_card))
+        resultados = cursor.fetchall()
+        
+        # Mapeando as colunas. 
+        # Cuidado para não confundir o vencimento da despesa com o da fatura!
+        colunas = [
+            'despesa_id', 'local', 'valor_total', 'parcelas', 'data_compra', 
+            'nome_cartao', 'limite_cartao', 'fechamento_fatura', 'vencimento_fatura'
+        ]
+        
+        # O Padrão Ouro que você já domina!
+        return [dict(zip(colunas, linha)) for linha in resultados]
+
+    except Exception as e:
+        print(f"Erro ao buscar despesas e cartão (JOIN): {e}")
+        return []
+    finally:
+        if gerenciar_conn:
+            desconectar(conn)
+
+
+
+
+
+def pega_cartao(id_user, id_card, conn=None):
     """
     Busca os cartões cadastrados pelo usuário
 
@@ -146,7 +200,7 @@ def pega_cartoes(id_user,conn=None):
     cursor = conn.cursor()
 
     try:
-        cursor.execute("SELECT nome, limite, dia_fechamento, dia_vencimento FROM despesas WHERE fk_usuario = %s", (id_user,))
+        cursor.execute("SELECT nome, limite, dia_fechamento, dia_vencimento FROM cartoes_credito WHERE fk_usuario = %s and id = %s", (id_user, id_card, ))
         cartoes = cursor.fetchall() 
 
         colunas = ['nome', 'limite', 'dia_fechamento', 'dia_vencimento']
@@ -163,7 +217,10 @@ def pega_cartoes(id_user,conn=None):
         if gerenciar_conn:
             desconectar(conn)
 
-def pega_despesas(id_user, conn=None):
+
+
+
+def pega_despesas_geral(id_user, conn=None):
     """
     Busca as despesas do usuário
     Args:

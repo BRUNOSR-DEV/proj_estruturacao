@@ -20,6 +20,61 @@ def data_para_mysql(data_obj):
         return data_obj.strftime("%Y-%m-%d")
     return None
 
+def mysql_para_obj(data_mysql):
+    """
+    Converte uma string 'YYYY-MM-DD' (vinda do banco) em objeto datetime.
+    Se já for um objeto date/datetime, apenas o retorna.
+    """
+    if isinstance(data_mysql, str):
+        try:
+            return datetime.strptime(data_mysql, "%Y-%m-%d")
+        except ValueError:
+            print(f"Erro: Formato MySQL inválido ({data_mysql})")
+            return None
+    return data_mysql
+
 def formatar_moeda(valor):
     """Auxiliar extra para formatar R$ 1.234,56."""
     return f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+
+def ret_str_parcelas(data_compra_obj, dia_fechamento, total_parcelas, data_atual=None):
+    """
+    Calcula a parcela atual baseada na data de compra e no fechamento da fatura.
+    Retorna uma string no formato 'Atual/Total' (ex: '3/12').
+    """
+    if data_atual is None:
+        data_atual = datetime.now()
+        
+    # 1. Descobre o mês da PRIMEIRA cobrança
+    mes_primeira_cobranca = data_compra_obj.month
+    ano_primeira_cobranca = data_compra_obj.year
+    
+    # Se a compra foi DEPOIS do fechamento, a 1ª parcela cai só no mês seguinte
+    if data_compra_obj.day > dia_fechamento:
+        mes_primeira_cobranca += 1
+        if mes_primeira_cobranca > 12:
+            mes_primeira_cobranca = 1
+            ano_primeira_cobranca += 1
+            
+    # 2. Calcula a diferença de meses entre o mês atual e o mês da 1ª cobrança
+    diferenca_anos = data_atual.year - ano_primeira_cobranca
+    diferenca_meses = data_atual.month - mes_primeira_cobranca
+    meses_passados = (diferenca_anos * 12) + diferenca_meses
+
+    #Se ainda não chegou o dia do fechamento neste mês, 
+    # não viramos a parcela ainda!
+    if data_atual.day < dia_fechamento:
+        meses_passados -= 1
+    
+    # A parcela atual é os meses que passaram + 1 (a parcela inicial)
+    parcela_atual = meses_passados + 1
+    
+    # 3. Validações de segurança
+    if parcela_atual < 1:
+        return f"0/{total_parcelas} (A vencer)"
+    elif parcela_atual > total_parcelas:
+        return f"{total_parcelas}/{total_parcelas} (Quitado)"
+    else:
+        return f"{parcela_atual}/{total_parcelas}"

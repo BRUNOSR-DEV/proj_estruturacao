@@ -9,9 +9,11 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from models.banco_geral import(
-    pega_cartoes, pega_despesas
+    pega_despesas_geral, pega_despesas_cartao
 )
-from utils.helper import
+from utils.helper import (
+    str_para_data, data_para_exibicao, data_para_mysql, formatar_moeda, mysql_para_obj, ret_str_parcelas
+)
 from datetime import datetime, timedelta
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
@@ -19,6 +21,7 @@ from dateutil.relativedelta import relativedelta
 usuario = "bruno"
 senha = "2285"
 id_user = 1
+id_card = 1
 
 """
 O Usuário irá cadastrar sua despesa... ele pode colocar data da compra e data vencimento. Se não colocar a data de vencimento é pq está no cartão de crédito e, ele tem vencimento próprio.
@@ -63,18 +66,56 @@ def definir_vencimento_real(data_compra_str, dia_fechamento, dia_vencimento):
     
     return vencimento_final
 
+def nome_card(dict):
+    for i in dict:
+        return i.get('nome_cartao')    
 
-def depesas_do_usuario(id_user):
+def depesas_um_cartao(id_user, id_card):
     """
-    Método que mostra as despesas do usuário
+    Método que mostra as despesas de um uúnico cartão cadastrado
+
+        returns pega_despesas_cartao: [
+            'despesa_id', 'local', 'valor_total', 'parcelas', 
+            'data_compra', 'data_vencimento_despesa', 
+            'nome_cartao', 'fechamento_fatura', 'vencimento_fatura'
+        ]
     """
-    for i in pega_despesas(id_user):
-        print(i.get('local'))
+
+    des_card = pega_despesas_cartao(id_user, id_card)
+    data_teste = mysql_para_obj('2027-1-12')
+
+    if des_card:
+        print(f"Mês Vigente - Analizando fatura do cartão {nome_card(des_card)}")
+
+        for i, v in enumerate(des_card):
+            # 1. Pegamos os dados individuais DESTA despesa específica 'v'
+            fechamento = v.get('fechamento_fatura')
+        
+            # Garante que a data é um objeto (use seu helper aqui se precisar)
+            data_compra = mysql_para_obj(v.get('data_compra'))
+        
+            # 2. Chamamos nossa super função!
+            str_parcela = ret_str_parcelas(data_compra, fechamento, v.get('parcelas'), data_teste)
+            valor_mensal = v.get('valor_total') / v.get('parcelas')
+        
+            # 3. Exibimos o resultado
+            print(f"[{i+1}] - Local: {v.get('local')}")
+            print(f"      Valor Mensal: {formatar_moeda(valor_mensal)}")
+            print(f"      Andamento: {str_parcela}")
+            print("-" * 30)
+    else:
+        print('Não tem despesas no cartão informado! ')
+            
 
 
+depesas_um_cartao(id_user, id_card)
+
+          
     
 
 
+def despesas_gerais(id_user):
+    pass
 
 
 
@@ -93,7 +134,7 @@ def depesas_do_usuario(id_user):
 
 
 
-#data_usuario = input("Digite uma data: ")
+'''#data_usuario = input("Digite uma data: ")
 data_input = input("Digite a data (DD/MM/AAAA)")
 
 try:
@@ -102,7 +143,7 @@ try:
     """data_obj = parser.parse(data_usuario, dayfirst=True, fuzzy=True)
     print(f'Data interpretada: {data_obj}')"""
 except ValueError:
-    print("Formato de data invalido!")
+    print("Formato de data invalido!")'''
 
 
 
