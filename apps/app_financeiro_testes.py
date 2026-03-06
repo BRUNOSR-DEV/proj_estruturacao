@@ -35,13 +35,24 @@ O Usuário irá cadastrar sua despesa... ele pode colocar data da compra e data 
         if data_dia > pega_fech_venc(id_user)[0]:
             data_venc = 12/03/26 
 
-- Método que retorna despesas de cada cartão utilizado pelo usuario
+            💡----- IDEIAS ---- 💡
+- Método que retorna despesas de cada cartão utilizado pelo usuario ✅
 
-- Método que pega a soma todas as dividas do mês seguinte
+    - O método precisa retornar despesas do vigente e do mês seguinte
+    - O método precisa retornar só despesas que precisam ser pagas ✅
+    - O método precisa retornar o total do que precisa ser pago  no mês
+
+- Método que retorna as despesas não cadastradas no cartão (despesas_avulsas)
+
+    - O método retorna somente as despesas a serem pagas no mês e no mês seguinte
+    - O método precisa retornar o total do que precisa ser  pago no mês
 
 - Método que pega soma de todas as dividas do mês vigente
+    - Método que retona o calculo das somas de cada fatura e total de despesas avulsas
 
-- Método que retorna as despesas não cadastradas no cartão.
+
+
+
 
 
 """
@@ -72,20 +83,25 @@ def nome_card(dict):
 
 def depesas_um_cartao(id_user, id_card):
     """
-    Método que mostra as despesas de um uúnico cartão cadastrado
+    Método que mostra as despesas de um único cartão cadastrado
 
         returns pega_despesas_cartao: [
-            'despesa_id', 'local', 'valor_total', 'parcelas', 
-            'data_compra', 'data_vencimento_despesa', 
-            'nome_cartao', 'fechamento_fatura', 'vencimento_fatura'
+            'despesa_id', 'local', 'valor_total', 'parcelas', 'data_compra', 
+            'nome_cartao', 'limite_cartao', 'fechamento_fatura', 'vencimento_fatura'
         ]
     """
 
     des_card = pega_despesas_cartao(id_user, id_card)
-    data_teste = mysql_para_obj('2027-1-12')
+    data_teste = mysql_para_obj('2026-06-02')
+
+    total_fatura = 0
+    data_atual = data_atual = datetime.now()
 
     if des_card:
-        print(f"Mês Vigente - Analizando fatura do cartão {nome_card(des_card)}")
+
+        mes_fatura = None
+
+        print(f" Analizando fatura do cartão {nome_card(des_card)}")
 
         for i, v in enumerate(des_card):
             # 1. Pegamos os dados individuais DESTA despesa específica 'v'
@@ -96,13 +112,27 @@ def depesas_um_cartao(id_user, id_card):
         
             # 2. Chamamos nossa super função!
             str_parcela = ret_str_parcelas(data_compra, fechamento, v.get('parcelas'), data_teste)
-            valor_mensal = v.get('valor_total') / v.get('parcelas')
-        
-            # 3. Exibimos o resultado
-            print(f"[{i+1}] - Local: {v.get('local')}")
-            print(f"      Valor Mensal: {formatar_moeda(valor_mensal)}")
-            print(f"      Andamento: {str_parcela}")
-            print("-" * 30)
+
+
+            if str_parcela[1]:
+                    valor_mensal = v.get('valor_total') / v.get('parcelas')
+                    total_fatura += valor_mensal
+
+                    # 3. Exibimos o resultado
+                    print(f"[{i+1}] - Local: {v.get('local')}")
+                    print(f"      Valor Mensal: {formatar_moeda(valor_mensal)}")
+                    print(f"      Andamento: {str_parcela[0]}")
+                    print("-" * 30)
+
+            dia_venc = int(v.get('vencimento_fatura'))
+
+            if str_parcela[2]:
+                mes_fatura = str_parcela[2].replace(day=dia_venc)
+            else:
+                data_atual = data_teste
+                mes_fatura = data_atual.replace(day=dia_venc)
+
+        print(F'TOTAL DA FATURA: {formatar_moeda(total_fatura)} Vencimento: {data_para_exibicao(mes_fatura)} ')
     else:
         print('Não tem despesas no cartão informado! ')
             
