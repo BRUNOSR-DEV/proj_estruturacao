@@ -77,6 +77,9 @@ def definir_vencimento_real(data_compra_str, dia_fechamento, dia_vencimento):
     
     return vencimento_final
 
+
+
+
 def nome_card(dict):
     for i in dict:
         return i.get('nome_cartao')    
@@ -132,13 +135,13 @@ def depesas_um_cartao(id_user, id_card):
                 data_atual = data_teste
                 mes_fatura = data_atual.replace(day=dia_venc)
 
-        print(F'TOTAL DA FATURA: {formatar_moeda(total_fatura)} Vencimento: {data_para_exibicao(mes_fatura)} ')
+        return (f'TOTAL DA FATURA: {formatar_moeda(total_fatura)} Vencimento: {data_para_exibicao(mes_fatura)}'), total_fatura
     else:
         print('Não tem despesas no cartão informado! ')
             
 
 
-depesas_um_cartao(id_user, id_card)
+print(depesas_um_cartao(id_user, id_card)[0])
 
           
     
